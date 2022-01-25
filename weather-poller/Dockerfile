@@ -5,6 +5,6 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-COPY lib/*/*.py syslog-bridge/syslog-influxdb-bridge.py ./
+COPY lib/*/*.py weather-poller/weather-poller.py ./
 
-CMD [ "python", "./syslog-influxdb-bridge.py" ]
+CMD [ "python", "./weather-poller.py" ]

@@ -5,6 +5,7 @@ volumes:
   grafana_data:
   letsencrypt_config:
   letsencrypt_data:
+  mosquito_data:
   nginx_config:
   oauth2proxy_config:
 services:
@@ -31,14 +32,16 @@ services:
   #   logging:
   #     driver: journald
   influxdb:
-    image: docker.io/influxdb/influxdb:latest
+    image: docker.io/library/influxdb:latest
     container_name: influxdb
     environment:
-      - ${DOCKER_INFLUXDB_INIT_PASSWORD:err}
+      - DOCKER_INFLUXDB_INIT_PASSWORD
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
       - DOCKER_INFLUXDB_INIT_ORG=Home
       - DOCKER_INFLUXDB_INIT_BUCKET=Environment
+    ports:
+      - "8086:8086"
     volumes:
       - influxdb_config:/etc/influxdb2
       - influxdb_data:/var/lib/influxdb2
@@ -49,7 +52,7 @@ services:
     image: docker.io/grafana/grafana:latest
     container_name: grafana
     environment:
-      - ${GF_SECURITY_ADMIN_PASSWORD:err}
+      - GF_SECURITY_ADMIN_PASSWORD
     depends_on:
       - influxdb
     ports:
@@ -59,10 +62,11 @@ services:
     restart: always
     logging:
       driver: journald
-  bridge:
+  syslog-bridge:
     build:
-      context: syslog-bridge
-    container_name: bridge
+      context: .
+      dockerfile: syslog-bridge/Dockerfile
+    container_name: syslog-bridge
     volumes:
       - /var/log/iot:/var/log/iot
       - influxdb_config:/etc/influxdb2
@@ -71,10 +75,62 @@ services:
       driver: journald
   weatherpoller:
     build:
-      context: weather-poller
+      context: .
+      dockerfile: weather-poller/Dockerfile
     container_name: weather-poller
+    environment:
+    - OBSERVATION_STATIONS
     volumes:
       - influxdb_config:/etc/influxdb2
+    restart: always
+    logging:
+      driver: journald
+  mosquitto:
+    build:
+      context: .
+      dockerfile: mosquitto/Dockerfile
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquito_data:/mosquitto/data
+      - letsencrypt_data:/etc/letsencrypt
+    restart: always
+    logging:
+      driver: journald
+  mqtt-bridge:
+    build:
+      context: .
+      dockerfile: mqtt-bridge/Dockerfile
+    container_name: mqtt-bridge
+    environment:
+      - MQTT_BROKER
+    volumes:
+      - influxdb_config:/etc/influxdb2
+    restart: always
+    logging:
+      driver: journald
+  influxdb-poller:
+    build:
+      context: .
+      dockerfile: influxdb-poller/Dockerfile
+    container_name: influxdb-poller
+    environment:
+      - MQTT_BROKER
+    volumes:
+      - influxdb_config:/etc/influxdb2
+    restart: always
+    logging:
+      driver: journald
+  telegram-bridge:
+    build:
+      context: .
+      dockerfile: telegram-bridge/Dockerfile
+    container_name: telegram-bridge
+    environment:
+      - TELEGRAM_TOKEN
+      - TELEGRAM_CHAT_ID
+      - MQTT_BROKER
     restart: always
     logging:
       driver: journald
