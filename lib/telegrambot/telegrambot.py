@@ -33,7 +33,7 @@ class TelegramBot():
         print('updater thread going', flush=True)
         # updater.idle()
 
-        self.send_msg(f'Bot startup completed at {time.time()}', None)
+        self.send_msg(f'Telegram connect at {time.time()}', None)
 
     def add_handler(self, command: str, callback: object) -> None:
         self.updater.dispatcher.add_handler(CommandHandler(command, callback, self.userfilter))

@@ -11,6 +11,7 @@ import paho.mqtt.client  # type: ignore
 
 class MQTT():
     def __init__(self, host, port=1883, user=None, password=None, keepalive=60, client_id=None, connect=True):
+        self.client_id = client_id
         self.client = paho.mqtt.client.Client(client_id)
 
         self._subscribed = set()
@@ -31,12 +32,12 @@ class MQTT():
     def on_message(self, mosq, obj, msg):
         print(f'Msg: {msg.topic} {str(msg.qos)} {str(msg.payload)}')
         if msg.topic == 'Commands/ALL' and msg.payload == b'check-in':
-            self.pub('Notifications/check-in-reply', sys.argv[0], qos=1)
+            self.pub('Notifications/check-in-reply', self.client_id or sys.argv[0], qos=1)
 
     def on_connect(self, mqttc, obj, flags, rc):
         print(f'Connected to {mqttc._host}:{mqttc._port} code {rc}', flush=True)
         self.sub(None, 'Commands/ALL', qos=1)
-        self.pub('Logs', f'InfluxDB Bridge Startup at {time.time()}', qos=1)
+        self.pub('Notifications/startup', f'{self.client_id or sys.argv[0]} connect at {time.time()}', qos=1)
         # for sub in self._subscribed:
         #     print('Resubscribing to', sub)
         #     self.sub(*sub)
