@@ -12,14 +12,6 @@ volumes:
   nginx_config:
   oauth2proxy_config:
 services:
-  # oauth2-proxy:
-  #   image: quay.io/oauth2-proxy/oauth2-proxy
-  #   container_name: oauth2-proxy
-  #   volumes:
-  #     - ./oauth2-proxy/proxy.cfg:/proxy.cfg:Z
-  #   restart: always
-  #   logging:
-  #     driver: journald
   # nginx:
   #   image: docker.io/library/nginx:latest
   #   container_name: nginx
@@ -31,7 +23,7 @@ services:
   #     - "443:443"
   #   depends_on:
   #     - oauth2-proxy
-  #   restart: always
+  #   restart: unless-stopped
   #   logging:
   #     driver: journald
 
@@ -52,11 +44,10 @@ services:
       - influxdb
     environment:
       - GF_SECURITY_ADMIN_PASSWORD
-    logging:
-      driver: journald
+    logging: *default-logging
     ports:
       - "3000:3000"
-    restart: always
+    restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
 
@@ -69,9 +60,8 @@ services:
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
       - DOCKER_INFLUXDB_INIT_ORG=Home
       - DOCKER_INFLUXDB_INIT_BUCKET=Environment
-    logging:
-      driver: journald
-    restart: always
+    logging: *default-logging
+    restart: unless-stopped
     volumes:
       - influxdb_config:/etc/influxdb2
       - influxdb_data:/var/lib/influxdb2
@@ -86,11 +76,10 @@ services:
       - mosquitto
     environment:
       - MQTT_BROKER
-    logging:
-      driver: journald
-    restart: always
+    logging: *default-logging
+    restart: unless-stopped
     volumes:
-      - influxdb_config:/etc/influxdb2
+      - influxdb_config:/etc/influxdb2:ro
 
   mosquitto:
     build:
@@ -99,57 +88,64 @@ services:
     container_name: mosquitto
     ports:
       - "1883:1883"
-    logging:
-      driver: journald
-    restart: always
+    logging: *default-logging
+    restart: unless-stopped
     volumes:
       - mosquito_data:/mosquitto/data
       - letsencrypt_data:/etc/letsencrypt
 
-  mqtt-bridge:
+  mqtt-influx-bridge:
     build:
       context: .
-      dockerfile: mqtt-bridge/Dockerfile
-    container_name: mqtt-bridge
+      dockerfile: mqtt-influx-bridge/Dockerfile
+    container_name: mqtt-influx-bridge
     depends_on:
       - influxdb
       - mosquitto
     environment:
       - MQTT_BROKER
-    logging:
-      driver: journald
-    restart: always
+    logging: *default-logging
+    restart: unless-stopped
     volumes:
-      - influxdb_config:/etc/influxdb2
+      - influxdb_config:/etc/influxdb2:ro
 
-  syslog-bridge:
+  mqtt-postgres-bridge:
     build:
       context: .
-      dockerfile: syslog-bridge/Dockerfile
-    container_name: syslog-bridge
+      dockerfile: mqtt-postgres-bridge/Dockerfile
+    container_name: mqtt-postgres-bridge
     depends_on:
-      - influxdb
-    logging:
-      driver: journald
-    restart: always
-    volumes:
-      - /var/log/iot:/var/log/iot
-      - influxdb_config:/etc/influxdb2
+      - postgres
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_PASSWORD
+      - MQTT_BROKER
+    logging: *default-logging
+    restart: unless-stopped
 
-  telegram-bridge:
+  mqtt-telegram-bridge:
     build:
       context: .
-      dockerfile: telegram-bridge/Dockerfile
-    container_name: telegram-bridge
+      dockerfile: mqtt-telegram-bridge/Dockerfile
+    container_name: mqtt-telegram-bridge
     depends_on:
       - mosquitto
     environment:
       - TELEGRAM_TOKEN
       - TELEGRAM_CHAT_ID
       - MQTT_BROKER
-    logging:
-      driver: journald
-    restart: always
+    logging: *default-logging
+    restart: unless-stopped
+
+  postgres:
+    image: docker.io/library/postgres:14
+    container_name: postgres
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_PASSWORD
+    logging: *default-logging
+    restart: unless-stopped
+
 
   syslog-influx-bridge:
     build:
@@ -174,11 +170,10 @@ services:
       - influxdb
     environment:
     - OBSERVATION_STATIONS
+    logging: *default-logging
+    restart: unless-stopped
     volumes:
-      - influxdb_config:/etc/influxdb2
-    restart: always
-    logging:
-      driver: journald
+      - influxdb_config:/etc/influxdb2:ro
 
 networks:
   default:

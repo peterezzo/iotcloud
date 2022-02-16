@@ -2,3 +2,4 @@ influxdb-client
 paho-mqtt
 python-telegram-bot
 requests
+psycopg2
