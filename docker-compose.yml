@@ -151,6 +151,20 @@ services:
       driver: journald
     restart: always
 
+  syslog-influx-bridge:
+    build:
+      context: .
+      dockerfile: syslog-influx-bridge/Dockerfile
+    container_name: syslog-influx-bridge
+    depends_on:
+      - influxdb
+    logging: *default-logging
+    restart: unless-stopped
+    volumes:
+      - /var/log/iot:/var/log/iot
+      - influxdb_config:/etc/influxdb2:ro
+
+
   weather-poller:
     build:
       context: .
