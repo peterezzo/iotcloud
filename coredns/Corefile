@@ -1,0 +1,11 @@
+. {
+    hosts static.hosts {
+        fallthrough
+    }
+    forward . tls://9.9.9.11 149.112.112.11 {
+        tls_servername dns11.quad9.net
+    }
+    cache 30
+    log
+    errors
+}

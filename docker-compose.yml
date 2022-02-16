@@ -1,4 +1,7 @@
 version: "3.7"
+x-logging:
+  &default-logging
+  driver: journald
 volumes:
   influxdb_data:
   influxdb_config:
@@ -31,6 +34,16 @@ services:
   #   restart: always
   #   logging:
   #     driver: journald
+
+  coredns:
+    build:
+      context: .
+      dockerfile: coredns/Dockerfile
+    container_name: coredns
+    logging: *default-logging
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
 
   grafana:
     image: docker.io/grafana/grafana:latest
