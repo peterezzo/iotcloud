@@ -1,2 +1,4 @@
 /.env
 /coredns/static.hosts
+/certbot/do-api.ini
+/mosquitto/remote.password_file

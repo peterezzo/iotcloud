@@ -6,26 +6,22 @@ volumes:
   influxdb_data:
   influxdb_config:
   grafana_data:
-  letsencrypt_config:
   letsencrypt_data:
   mosquito_data:
   nginx_config:
   oauth2proxy_config:
 services:
-  # nginx:
-  #   image: docker.io/library/nginx:latest
-  #   container_name: nginx
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:Z
-  #     - letsencrypt_data:/etc/letsencrypt
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   depends_on:
-  #     - oauth2-proxy
-  #   restart: unless-stopped
-  #   logging:
-  #     driver: journald
+
+  certbot:
+    build:
+      context: .
+      dockerfile: certbot/Dockerfile
+    container_name: certbot
+    environment:
+      - DOMAIN
+    logging: *default-logging
+    volumes:
+      - letsencrypt_data:/etc/letsencrypt
 
   coredns:
     build:
@@ -65,21 +61,6 @@ services:
     volumes:
       - influxdb_config:/etc/influxdb2
       - influxdb_data:/var/lib/influxdb2
-
-  influxdb-poller:
-    build:
-      context: .
-      dockerfile: influxdb-poller/Dockerfile
-    container_name: influxdb-poller
-    depends_on:
-      - influxdb
-      - mosquitto
-    environment:
-      - MQTT_BROKER
-    logging: *default-logging
-    restart: unless-stopped
-    volumes:
-      - influxdb_config:/etc/influxdb2:ro
 
   mosquitto:
     build:
