@@ -69,6 +69,7 @@ services:
     container_name: mosquitto
     ports:
       - "1883:1883"
+      - "8883:8883"
     logging: *default-logging
     restart: unless-stopped
     volumes:
