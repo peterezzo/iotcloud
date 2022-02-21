@@ -33,8 +33,15 @@ class InventoryDB():
                 'on conflict (src, meta, name) do update set lastseen = NOW();'
         self.cursor.execute(query, (src, meta, name))
 
-    def search(self, searchstr):
-        query = "select * from Inventory where name like %s and lastseen > NOW() - interval '2 days' order by name;"
+    def search_all(self, searchstr):
+        query = "select * from Inventory where name like %s " + \
+                "and lastseen > NOW() - interval '2 days' order by name;"
+        self.cursor.execute(query, (searchstr,))
+        return self.cursor.fetchall()
+
+    def search_names(self, searchstr):
+        query = "select distinct name, meta from Inventory where name like %s " + \
+                "and lastseen > NOW() - interval '2 days' order by name;"
         self.cursor.execute(query, (searchstr,))
         return self.cursor.fetchall()
 

@@ -19,9 +19,9 @@ Telegram-MQTT Bridge and Notifier
 
 """
 
+import json
 import os
 import time
-import requests
 
 from mqtt import MQTT  # type: ignore
 from telegrambot import TelegramBot, Update, CallbackContext, ParseMode  # type: ignore
@@ -32,12 +32,14 @@ class Bridge():
         self.cmds = [
             ('chatid', 'Returns your chat id.\n    /chatid', self.chat_id),
             ('down', 'Downloads a file from the server.\n    /down <file name|file path>', self.down),
-            ('get', 'Makes a get request and returns the result.\n    /get <url>', self.get),
+            ('get', 'Request an object from the network.\n    /get <src> <name>', self.get),
             ('help', 'Display helpful information on how to setup bot.\n    /help', self.help),
             ('humidities', 'Display current humidities.\n    /humidities', self.humidities),
             ('img', 'Returns an image.\n    /img <path>', self.img),
             ('pub', 'Publish an arbitrary message to topic.\n    /pub <topic> <msg>', self.pub),
             ('rollcall', 'Requests all MQTT-integrated systems check-in\n    /rollcall', self.rollcall),
+            ('search', 'Search for object names in Postgres\n    /search <query>', self.search),
+            ('sources', 'Search for object sources in Postgres\n    /sources <query>', self.sources),
             ('temperatures', 'Display current temperatures.\n    /temperatures', self.temperatures),
             ('whoami', 'Returns your user id.\n    /whoami', self.who_am_i),
         ]
@@ -65,9 +67,9 @@ class Bridge():
             context.bot.send_document(chat_id=update.message.chat_id, document=open(f'{current_dir}/{path}', 'rb'))
 
     def get(self, update: Update, context: CallbackContext) -> None:
-        """Imported and Unverified. (Telegram Callback)"""
-        result = requests.get(context.args[0])
-        context.bot.send_message(chat_id=update.message.chat_id, text=result.text)
+        """Get an object from the IRC network. (Telegram Callback)"""
+        src, name = context.args
+        self.mqtt.pub('Commands/IRC', json.dumps({'type': 'privmsg', 'target': src, 'msg': f'xdcc sendfile {name}'}))
 
     def help(self, update: Update, context: CallbackContext) -> None:
         """Display available commands when /help is issued in Telegram. (Telegram Callback)"""
@@ -85,11 +87,11 @@ class Bridge():
 
     def temperatures(self, update: Update, context: CallbackContext) -> None:
         """Perform the temperature display flow when /temperatures is issued. (Telegram Callback)"""
-        self.mqtt.pub('Commands/Sensors', 'get-temperatures', qos=1)
+        self.mqtt.pub('Commands/Influx', 'get-temperatures', qos=1)
 
     def humidities(self, update: Update, context: CallbackContext) -> None:
         """Perform the temperature display flow when /humidities is issued. (Telegram Callback)"""
-        self.mqtt.pub('Commands/Sensors', 'get-humidities', qos=1)
+        self.mqtt.pub('Commands/Influx', 'get-humidities', qos=1)
 
     def rollcall(self, update: Update, context: CallbackContext) -> None:
         """Perform a checkin of bot fleet  when /rollcall is issued. (Telegram Callback)"""
@@ -97,8 +99,11 @@ class Bridge():
 
     def search(self, update: Update, context: CallbackContext) -> None:
         """Perform an object search in postgres /search is issued. (Telegram Callback)"""
-        cmd = {'type': 'search', }
-        self.mqtt.pub('Commands/DB', f'search {context.args[0]}')
+        self.mqtt.pub('Commands/Postgres', f'search {context.args[0]}')
+
+    def sources(self, update: Update, context: CallbackContext) -> None:
+        """Perform an object search in postgres /sources is issued. (Telegram Callback)"""
+        self.mqtt.pub('Commands/Postgres', f'sources {context.args[0]}')
 
     def who_am_i(self, update: Update, context: CallbackContext):
         """Imported and Unverified. (Telegram Callback)"""
@@ -122,7 +127,6 @@ class Bridge():
         for cmd in self.cmds:
             self.bot.add_handler(cmd[0], cmd[2])
 
-        self.mqtt.pub('Logs', f'Telegram Bridge Startup at {time.time()}', qos=1)
         while True:
             time.sleep(1)
 

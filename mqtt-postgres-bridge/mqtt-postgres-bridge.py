@@ -29,12 +29,22 @@ class Bridge():
         self.db.add_record(**payload)
 
     def queries(self, mosq, obj, msg):
-        if b'search' in msg.payload:
-            results = self.db.search(msg.payload.split(maxsplit=1)[1].decode())
-            print(results, flush=True)
-            self.mqtt.pub('CommandResponses/DB', json.dumps(results, default=serializer))
+        if b'search' in msg.payload[:6]:
+            self.search(msg.payload.split(maxsplit=1)[1].decode())
+        elif b'sources' in msg.payload[:7]:
+            self.sources(msg.payload.split(maxsplit=1)[1].decode())
         elif msg.payload == b'dbreport':
             pass
+
+    def search(self, data):
+        results = self.db.search_names(data)
+        # self.mqtt.pub('Notifications/cmd-reply', json.dumps(results, default=serializer))
+        self.mqtt.pub('Notifications/cmd-reply', '\n'.join([f'{result[0]} : {result[1]}' for result in results]))
+
+    def sources(self, data):
+        results = self.db.search_all(data)
+        # self.mqtt.pub('Notifications/cmd-reply', json.dumps(results, default=serializer))
+        self.mqtt.pub('Notifications/cmd-reply', '\n'.join([f'{result[1]} {result[3]}' for result in results]))
 
     def main(self) -> None:
         dbname = os.getenv('POSTGRES_DB')
@@ -49,9 +59,8 @@ class Bridge():
 
         print('adding callbacks', flush=True)
         self.mqtt.sub(self.relay_objects, 'IRC/watchlist')
-        self.mqtt.sub(self.queries, 'Commands/DB')
+        self.mqtt.sub(self.queries, 'Commands/Postgres')
 
-        self.mqtt.pub('Logs', f'Postgres Bridge Startup at {time.time()}', qos=1)
         while True:
             time.sleep(1)
 
