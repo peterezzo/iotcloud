@@ -67,6 +67,8 @@ services:
       context: .
       dockerfile: mosquitto/Dockerfile
     container_name: mosquitto
+    depends_on:
+      - certbot
     ports:
       - "1883:1883"
       - "8883:8883"
@@ -97,6 +99,7 @@ services:
       dockerfile: mqtt-postgres-bridge/Dockerfile
     container_name: mqtt-postgres-bridge
     depends_on:
+      - mosquitto
       - postgres
     environment:
       - POSTGRES_DB
@@ -128,7 +131,6 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
-
   syslog-influx-bridge:
     build:
       context: .
@@ -141,7 +143,6 @@ services:
     volumes:
       - /var/log/iot:/var/log/iot
       - influxdb_config:/etc/influxdb2:ro
-
 
   weather-poller:
     build:

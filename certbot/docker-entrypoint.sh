@@ -10,5 +10,6 @@ do
         --dns-digitalocean --dns-digitalocean-credentials /do-api.ini \
         -d $DOMAIN
     fi
+    chmod -R g+rX,o+rX /etc/letsencrypt/*
     sleep 24h
 done
