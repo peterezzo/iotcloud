@@ -32,8 +32,8 @@ class Bridge():
             },
             'time': str(datetime.datetime.utcnow().replace(microsecond=0)),
             'fields': {
-                'temperature': metrics['temperature'],
-                'humidity': metrics['humidity']
+                'temperature': float(metrics['temperature']),
+                'humidity': float(metrics['humidity'])
             }
         }
         print(data_payload, flush=True)
@@ -89,7 +89,7 @@ class Bridge():
 
         print('adding callbacks', flush=True)
         self.mqtt.sub(self.relay_metric, 'Sensors/#')
-        self.mqtt.sub(self.cmd_dispatcher, 'Commands/Sensors', 0)
+        self.mqtt.sub(self.cmd_dispatcher, 'Commands/Influx', 0)
 
         while True:
             time.sleep(1)

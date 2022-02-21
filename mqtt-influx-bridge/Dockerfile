@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r re
 
 COPY lib/*/*.py mqtt-influx-bridge/mqtt-influx-bridge.py ./
 
-CMD [ "python", "./mqtt-pinflux-bridge.py" ]
+CMD [ "python", "./mqtt-influx-bridge.py" ]
