@@ -1,5 +1,6 @@
 influxdb-client
+irc
 paho-mqtt
+psycopg2
 python-telegram-bot
 requests
-psycopg2

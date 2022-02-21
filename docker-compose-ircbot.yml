@@ -1,0 +1,24 @@
+version: "3.7"
+services:
+  ircbot:
+    build:
+      context: .
+    container_name: ircbot
+    environment:
+      - MQTT_BROKER
+      - MQTT_PORT
+      - MQTT_USER
+      - MQTT_PASS
+      - NICKNAME
+      - NICKSERV_PASS
+      - IRC_SERVER
+      - IRC_PORT
+      - IRC_SSL
+      - IRC_CHANNELS
+      - IRC_WATCHLIST
+    logging:
+      driver: journald
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ${DATA_PATH}:/data
