@@ -1,4 +1,4 @@
 FROM eclipse-mosquitto:2.0
 
-COPY remote.password_file /mosquitto/data/
-COPY mosquitto/mosquitto.conf /mosquitto/config/ 
+COPY mosquitto/mosquitto.conf mosquitto/remote.password_file /mosquitto/config/
+
