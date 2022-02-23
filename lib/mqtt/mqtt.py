@@ -48,8 +48,10 @@ class MQTT():
     def on_disconnect(self, client: Client, userdata: Any, rc: int) -> None:
         print(f'Disconnected from {client._host}:{client._port} code {rc}')
 
-    def pub(self, topic: str, message: str, retain: bool = False, qos: int = 0) -> None:
+    def pub(self, topic: str, message: str, retain: bool = False, qos: int = 0, verbose: bool = False) -> None:
         self.client.publish(topic, message, qos)
+        if verbose:
+            print('PUBLISH', topic, message, flush=True)
 
     def sub(self, callback: Callable, topic: str, qos: int = 0) -> None:
         if callback:
