@@ -7,4 +7,6 @@ RUN apk add build-base postgresql-dev && pip install --no-cache-dir --upgrade pi
 
 COPY lib/*/*.py mqtt-irc-bridge/mqtt-irc-bridge.py ./
 
+USER 1000:1000
+
 CMD [ "python", "./mqtt-irc-bridge.py" ]

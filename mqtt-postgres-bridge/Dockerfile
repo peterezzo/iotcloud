@@ -1,10 +1,12 @@
-FROM python:3
+FROM python:3-alpine
 
 WORKDIR /usr/src/app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN apk add build-base postgresql-dev && pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 COPY lib/*/*.py mqtt-postgres-bridge/mqtt-postgres-bridge.py ./
+
+USER 1000:1000
 
 CMD [ "python", "./mqtt-postgres-bridge.py" ]
