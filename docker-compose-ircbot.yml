@@ -3,14 +3,15 @@ services:
   ircbot:
     build:
       context: .
+      dockerfile: mqtt-irc-bridge/Dockerfile
     container_name: ircbot
     environment:
-      - MQTT_BROKER
-      - MQTT_PORT
-      - MQTT_USER
-      - MQTT_PASS
-      - NICKNAME
-      - NICKSERV_PASS
+      - IRC_MQTT_BROKER
+      - IRC_MQTT_PORT
+      - IRC_MQTT_USER
+      - IRC_MQTT_PASS
+      - IRC_NICKNAME
+      - IRC_NICKSERV_PASS
       - IRC_SERVER
       - IRC_PORT
       - IRC_SSL
@@ -21,4 +22,4 @@ services:
     network_mode: host
     restart: unless-stopped
     volumes:
-      - ${DATA_PATH}:/data
+      - ${IRC_DATA_PATH}:/data
