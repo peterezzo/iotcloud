@@ -122,7 +122,6 @@ class Bot():
                           os.getenv('IRC_CHANNELS').split(';')
                           )
         self.transfers = Transfers()
-        self.debug_file = open('/data/unparsed.log', 'at')
         self.watchlist = os.getenv('IRC_WATCHLIST').split(';')
 
         self.callbacks = [
@@ -168,8 +167,6 @@ class Bot():
                 meta = extract.group(1)
                 name = extract.group(2)
                 self.mqtt.pub('IRC/watchlist', json.dumps({'src': src, 'meta': meta, 'name': name}))
-            else:
-                self.debug('WATCHLIST', event)
         elif event.target == connection.nickname:
             extract = re.match(r'.{21,30}\"([^\"]+)\".{3,15}\w{3}:([^\]]+)', event.arguments[0])
             if extract:
@@ -185,6 +182,7 @@ class Bot():
             print('CTCP', event)
 
     def handle_dcc(self, connection: ServerConnection, event: Event) -> None:
+        """Not actually an IRC Callback"""
         src = event.source.nick
         cmd, name, v1, v2, size = (event.arguments[1].split() + [0])[:5]
         if cmd == 'SEND':   # DCC SEND filename ip port size
@@ -221,9 +219,6 @@ class Bot():
         valid = 'verified' if transfer.get('md5', '') == transfer.get('end_md5') else 'unverified'
         msg = f"Received {valid} transfer of {transfer['pct_complete']:0.2f}% of file {transfer['name']}"
         self.mqtt.pub('Notifications/irc', msg, verbose=True)
-
-    def debug(self, *msg) -> None:
-        print(*msg, file=self.debug_file, flush=True)
 
     def debug_print(self, connection: ServerConnection, event: Event) -> None:
         """IRC Callback"""

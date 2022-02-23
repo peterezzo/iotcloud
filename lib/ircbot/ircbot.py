@@ -29,7 +29,6 @@ class IRCBot():
         self.channels = channels
         self.nickpass = nickpass
         if self.nickpass:
-            print('Subbing for nickserv')
             self.sub(self.nickserv_auth, 'privnotice')
         else:
             self.sub(self.join_channels, 'connect')
