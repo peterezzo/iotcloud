@@ -34,22 +34,13 @@ class InventoryDB():
         self.cursor.execute(query, (src, meta, name))
 
     def search_all(self, searchstr):
-        query = "select * from Inventory where name like %s " + \
+        query = "select * from Inventory where name ~* %s " + \
                 "and lastseen > NOW() - interval '2 days' order by name;"
         self.cursor.execute(query, (searchstr,))
         return self.cursor.fetchall()
 
     def search_names(self, searchstr):
-        query = "select distinct name, meta from Inventory where name like %s " + \
+        query = "select distinct name, meta from Inventory where name ~* %s " + \
                 "and lastseen > NOW() - interval '2 days' order by name;"
         self.cursor.execute(query, (searchstr,))
         return self.cursor.fetchall()
-
-    def report(self):
-        self.cursor.execute('select distinct count(*) from Inventory group by name')
-        count_files = self.cursor.fetchone()[0]
-        print(f'Unique names: {count_files}')
-
-        self.cursor.execute('select count(*) from Packs')
-        count_packs = self.cursor.fetchone()[0]
-        print(f'Total available: {count_packs}')
