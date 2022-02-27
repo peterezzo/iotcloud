@@ -38,6 +38,7 @@ class Bridge():
             ('pub', 'Publish an arbitrary message to topic.\n    /pub <topic> <msg>', self.pub),
             ('rollcall', 'Requests all MQTT-integrated systems check-in\n    /rollcall', self.rollcall),
             ('search', 'Search for object names in Postgres\n    /search <query>', self.search),
+            ('status', 'Request status from network bot\n    /status', self.search),
             ('temperatures', 'Display current temperatures.\n    /temperatures', self.temperatures),
             ('whoami', 'Returns your user id.\n    /whoami', self.who_am_i),
         ]
