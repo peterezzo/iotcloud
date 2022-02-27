@@ -36,11 +36,18 @@ class InventoryDB():
     def search_all(self, searchstr):
         query = "select * from Inventory where name ~* %s " + \
                 "and lastseen > NOW() - interval '2 days' order by name;"
-        self.cursor.execute(query, (searchstr,))
-        return self.cursor.fetchall()
+        return self._search(query, (searchstr,))
 
     def search_names(self, searchstr):
         query = "select distinct name, meta from Inventory where name ~* %s " + \
                 "and lastseen > NOW() - interval '2 days' order by name;"
-        self.cursor.execute(query, (searchstr,))
+        return self._search(query, (searchstr,))
+
+    def search_all_by_src(self, searchstr):
+        query = "select * from Inventory where src ~* %s " + \
+                "and lastseen > NOW() - interval '2 days' order by name;"
+        return self._search(query, (searchstr,))
+
+    def _search(self, query: str, params: tuple):
+        self.cursor.execute(query, (params))
         return self.cursor.fetchall()
