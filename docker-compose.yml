@@ -1,21 +1,27 @@
 version: "3.7"
+
 x-logging:
   &default-logging
   driver: journald
+
 volumes:
+
   influxdb_data:
   influxdb_config:
   grafana_data:
   letsencrypt_data:
   mosquito_data:
-  nginx_config:
-  oauth2proxy_config:
+
+networks:
+  default:
+    name: iotcloud
+    driver: overlay
+    attachable: true
+
 services:
 
   certbot:
-    build:
-      context: .
-      dockerfile: certbot/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_certbot:latest
     container_name: certbot
     environment:
       - DOMAIN
@@ -24,14 +30,15 @@ services:
       - letsencrypt_data:/etc/letsencrypt
 
   coredns:
-    build:
-      context: .
-      dockerfile: coredns/Dockerfile
+    image: docker.io/coredns/coredns
     container_name: coredns
     logging: *default-logging
     ports:
       - "53:53/udp"
       - "53:53/tcp"
+    volumes:
+      - ./coredns/Corefile:/config/Corefile
+      - ./coredns/static.hosts:/config/static.hosts
 
   grafana:
     image: docker.io/grafana/grafana:latest
@@ -63,9 +70,7 @@ services:
       - influxdb_data:/var/lib/influxdb2
 
   mosquitto:
-    build:
-      context: .
-      dockerfile: mosquitto/Dockerfile
+    image: docker.io/library/eclipse-mosquitto:2.0
     container_name: mosquitto
     depends_on:
       - certbot
@@ -75,13 +80,13 @@ services:
     logging: *default-logging
     restart: unless-stopped
     volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/remote.password_file:/mosquitto/config/remote.password_file
       - mosquito_data:/mosquitto/data
-      - letsencrypt_data:/etc/letsencrypt
+      - letsencrypt_data:/etc/letsencrypt:ro
 
   mqtt-influx-bridge:
-    build:
-      context: .
-      dockerfile: mqtt-influx-bridge/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge:latest
     container_name: mqtt-influx-bridge
     depends_on:
       - influxdb
@@ -94,9 +99,7 @@ services:
       - influxdb_config:/etc/influxdb2:ro
 
   mqtt-postgres-bridge:
-    build:
-      context: .
-      dockerfile: mqtt-postgres-bridge/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge:latest
     container_name: mqtt-postgres-bridge
     depends_on:
       - mosquitto
@@ -105,13 +108,12 @@ services:
       - POSTGRES_DB
       - POSTGRES_PASSWORD
       - MQTT_BROKER
+      - PREAMBLE
     logging: *default-logging
     restart: unless-stopped
 
   mqtt-telegram-bridge:
-    build:
-      context: .
-      dockerfile: mqtt-telegram-bridge/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge:latest
     container_name: mqtt-telegram-bridge
     depends_on:
       - mosquitto
@@ -123,7 +125,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: docker.io/library/postgres:14
+    image: docker.io/library/postgres:14-alpine
     container_name: postgres
     environment:
       - POSTGRES_DB
@@ -131,23 +133,8 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
-  syslog-influx-bridge:
-    build:
-      context: .
-      dockerfile: syslog-influx-bridge/Dockerfile
-    container_name: syslog-influx-bridge
-    depends_on:
-      - influxdb
-    logging: *default-logging
-    restart: unless-stopped
-    volumes:
-      - /var/log/iot:/var/log/iot
-      - influxdb_config:/etc/influxdb2:ro
-
   weather-poller:
-    build:
-      context: .
-      dockerfile: weather-poller/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller:latest
     container_name: weather-poller
     depends_on:
       - influxdb
@@ -157,7 +144,3 @@ services:
     restart: unless-stopped
     volumes:
       - influxdb_config:/etc/influxdb2:ro
-
-networks:
-  default:
-    name: iotcloud

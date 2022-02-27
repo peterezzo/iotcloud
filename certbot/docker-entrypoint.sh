@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo $DIGITALOCEAN_API_TOKEN > /do-api.ini
+
 while :
 do
     if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then

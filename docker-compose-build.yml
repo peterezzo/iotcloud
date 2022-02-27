@@ -1,0 +1,43 @@
+version: "3.7"
+services:
+
+  base-image:
+    build:
+      context: .
+      dockerfile: base/Dockerfile
+    image: ${CONTAINER_REGISTRY}/iotcloud_base:latest
+
+  certbot:
+    build:
+      context: certbot
+    image: ${CONTAINER_REGISTRY}/iotcloud_certbot:latest
+
+  invencli:
+    build:
+      context: invencli
+    image: ${CONTAINER_REGISTRY}/iotcloud_invencli:latest
+
+  ircbot:
+    build:
+      context: mqtt-irc-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_ircbot:latest
+
+  mqtt-influx-bridge:
+    build:
+      context: mqtt-influx-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge:latest
+
+  mqtt-postgres-bridge:
+    build:
+      context: mqtt-postgres-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge:latest
+
+  mqtt-telegram-bridge:
+    build:
+      context: mqtt-telegram-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge:latest
+
+  weather-poller:
+    build:
+      context: weather-poller
+    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller:latest

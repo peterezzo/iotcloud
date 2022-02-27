@@ -1,9 +1,13 @@
 version: "3.7"
+volumes:
+  data:
+    driver_opts:
+      type: cifs
+      device: "${AZURE_SHARE}"
+      o: "vers=3.1.1,rw,seal,uid=1000,${AZURE_CREDS}"
 services:
   ircbot:
-    build:
-      context: .
-      dockerfile: mqtt-irc-bridge/Dockerfile
+    image: ghcr.io/peterezzo/iotcloud_ircbot:latest
     container_name: ircbot
     environment:
       - IRC_MQTT_BROKER
@@ -22,4 +26,4 @@ services:
     network_mode: host
     restart: unless-stopped
     volumes:
-      - ${IRC_DATA_PATH}:/data
+      - data:/data

@@ -1,11 +1,6 @@
-FROM python:3-alpine
+FROM ghcr.io/peterezzo/iotcloud_base:latest
 
-WORKDIR /usr/src/app
-
-COPY requirements.txt ./
-RUN apk add build-base postgresql-dev && pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
-
-COPY lib/*/*.py mqtt-influx-bridge/mqtt-influx-bridge.py ./
+COPY mqtt-influx-bridge.py ./
 
 USER 1000:1000
 
