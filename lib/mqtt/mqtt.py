@@ -3,7 +3,7 @@ Python object to work with MQTT Broker (tested with Mosquitto)
 """
 
 import time
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from paho.mqtt.client import Client, MQTTMessage  # type: ignore
 
 
@@ -48,15 +48,19 @@ class MQTT():
     def on_disconnect(self, client: Client, userdata: Any, rc: int) -> None:
         print(f'Disconnected from {client._host}:{client._port} code {rc}')
 
-    def pub(self, topic: str, message: str, retain: bool = False, qos: int = 0, verbose: bool = False) -> None:
-        self.client.publish(topic, message, qos)
+    def pub(self, topic: str, message: str, qos: int = 2, retain: bool = False,  verbose: bool = False) -> None:
+        self.client.publish(topic, message, qos, retain)
         if verbose:
             print('PUBLISH', topic, message, flush=True)
 
-    def sub(self, callback: Callable, topic: str, qos: int = 0) -> None:
+    def sub(self, callback: Callable, topic: str, qos: int = 2) -> None:
         if callback:
             self.client.message_callback_add(topic, callback)
         self.client.subscribe(topic, qos)
+
+    def multipub(self, msgs: Iterable, verbose: bool = False) -> None:
+        for msg in msgs:
+            self.pub(*msg, verbose=verbose)
 
     def listen(self, blocking: bool = False) -> None:
         """
