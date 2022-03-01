@@ -116,18 +116,19 @@ class Transfer():
 
 class Bot():
     def __init__(self) -> None:
-        self.mqtt = MQTT(os.getenv('IRC_MQTT_BROKER'),
-                         int(os.getenv('IRC_MQTT_PORT')),
-                         os.getenv('IRC_MQTT_USER'),
-                         os.getenv('IRC_MQTT_PASS'),
-                         use_ssl=True,
+        self.mqtt = MQTT(os.getenv('MQTT_BROKER'),
+                         #  int(os.getenv('IRC_MQTT_PORT')),
+                         #  os.getenv('IRC_MQTT_USER'),
+                         #  os.getenv('IRC_MQTT_PASS'),
+                         #  use_ssl=True,
                          client_id='mqtt-irc-bridge'
                          )
         self.irc = IRCBot(os.getenv('IRC_SERVER'),
                           int(os.getenv('IRC_PORT')),
                           os.getenv('IRC_NICKNAME'),
                           os.getenv('IRC_NICKSERV_PASS'),
-                          os.getenv('IRC_CHANNELS').split(';')
+                          os.getenv('IRC_CHANNELS').split(';'),
+                          proxy=(os.getenv('IRC_PROXY_HOST'), int(os.getenv('IRC_PROXY_PORT')))
                           )
         self.watchlist = os.getenv('IRC_WATCHLIST').split(';')
         self.transfers = {}
@@ -186,16 +187,12 @@ class Bot():
         if event.target in self.watchlist:
             extract = re.match(r'.{4,16} +\d+x \[([^\]]+)\] (.*)', event.arguments[0])
             if extract:
-                src = event.source.nick
-                meta = extract.group(1)
-                name = extract.group(2)
+                src, meta, name = event.source.nick, extract.group(1), extract.group(2)
                 self.mqtt.pub('IRC/watchlist', json.dumps({'src': src, 'meta': meta, 'name': name}))
         elif event.target == connection.nickname:
             extract = re.match(r'.{21,35}\"([^\"]+)\".{3,15}\w{3}:([^\]]+)', event.arguments[0])
             if extract:
-                name = extract.group(1)
-                md5 = extract.group(2)
-                self.md5[name] = md5
+                self.md5[extract.group(1)] = extract.group(2)
             elif 'MD5' in event.arguments[0]:
                 log(event.arguments[0])
 
@@ -211,7 +208,7 @@ class Bot():
 
             cmd, name, v1, v2, size = (event.arguments[1].split() + [0])[:5]
             if cmd == 'SEND':   # DCC SEND filename ip port size
-                ip = ".".join(map(str, struct.unpack('BBBB', struct.pack('>L', int(v1)))))
+                ip = '.'.join(map(str, struct.unpack('BBBB', struct.pack('>L', int(v1)))))
                 metadata = {'name': name, 'src': src, 'ip': ip, 'port': v2, 'size': size, 'connection': self.irc.dcc()}
             elif cmd == 'ACCEPT':  # DCC ACCEPT filename port position
                 metadata = {'name': name, 'src': src, 'port': v1, 'startat': v2}
