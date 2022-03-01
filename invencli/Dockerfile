@@ -1,4 +1,4 @@
-FROM ghcr.io/peterezzo/iotcloud_base
+FROM iotcloud_base
 
 COPY invencli.py ./
 

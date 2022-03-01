@@ -1,4 +1,4 @@
-FROM ghcr.io/peterezzo/iotcloud_base:latest
+FROM iotcloud_base
 
 COPY mqtt-telegram-bridge.py ./
 

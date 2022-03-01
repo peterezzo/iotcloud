@@ -1,43 +1,42 @@
 version: "3.7"
 services:
 
-  base-image:
-    build:
-      context: .
-      dockerfile: base/Dockerfile
-    image: ${CONTAINER_REGISTRY}/iotcloud_base:latest
-
   certbot:
     build:
       context: certbot
-    image: ${CONTAINER_REGISTRY}/iotcloud_certbot:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_certbot
 
   invencli:
     build:
       context: invencli
-    image: ${CONTAINER_REGISTRY}/iotcloud_invencli:latest
-
-  ircbot:
-    build:
-      context: mqtt-irc-bridge
-    image: ${CONTAINER_REGISTRY}/iotcloud_ircbot:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_invencli
 
   mqtt-influx-bridge:
     build:
       context: mqtt-influx-bridge
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge
+
+  mqtt-irc-bridge:
+    build:
+      context: mqtt-irc-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-irc-bridge
 
   mqtt-postgres-bridge:
     build:
       context: mqtt-postgres-bridge
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge
 
   mqtt-telegram-bridge:
     build:
       context: mqtt-telegram-bridge
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge
+
+  proxy:
+    build:
+      context: proxy
+    image: ${CONTAINER_REGISTRY}/iotcloud_proxy
 
   weather-poller:
     build:
       context: weather-poller
-    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller

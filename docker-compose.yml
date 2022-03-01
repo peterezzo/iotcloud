@@ -15,17 +15,16 @@ volumes:
 networks:
   default:
     name: iotcloud
-    driver: overlay
-    attachable: true
 
 services:
 
   certbot:
-    image: ${CONTAINER_REGISTRY}/iotcloud_certbot:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_certbot
     container_name: certbot
     environment:
       - DOMAIN
     logging: *default-logging
+    restart: unless-stopped
     volumes:
       - letsencrypt_data:/etc/letsencrypt
 
@@ -36,12 +35,13 @@ services:
     ports:
       - "53:53/udp"
       - "53:53/tcp"
+    restart: unless-stopped
     volumes:
       - ./coredns/Corefile:/config/Corefile
       - ./coredns/static.hosts:/config/static.hosts
 
   grafana:
-    image: docker.io/grafana/grafana:latest
+    image: docker.io/grafana/grafana
     container_name: grafana
     depends_on:
       - influxdb
@@ -55,7 +55,7 @@ services:
       - grafana_data:/var/lib/grafana
 
   influxdb:
-    image: docker.io/library/influxdb:latest
+    image: docker.io/library/influxdb
     container_name: influxdb
     environment:
       - DOCKER_INFLUXDB_INIT_PASSWORD
@@ -86,7 +86,7 @@ services:
       - letsencrypt_data:/etc/letsencrypt:ro
 
   mqtt-influx-bridge:
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-influx-bridge
     container_name: mqtt-influx-bridge
     depends_on:
       - influxdb
@@ -98,8 +98,30 @@ services:
     volumes:
       - influxdb_config:/etc/influxdb2:ro
 
+  mqtt-irc-bridge:
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-irc-bridge
+    container_name: mqtt-irc-bridge
+    depends_on:
+      - proxy
+    environment:
+      - MQTT_BROKER
+      - IRC_NICKNAME
+      - IRC_NICKSERV_PASS
+      - IRC_SERVER
+      - IRC_PORT
+      - IRC_SSL
+      - IRC_CHANNELS
+      - IRC_WATCHLIST
+      - IRC_PROXY_HOST
+      - IRC_PROXY_PORT
+    logging:
+      driver: journald
+    restart: unless-stopped
+    volumes:
+      - ${DATA_VOLUME}:/data
+
   mqtt-postgres-bridge:
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-postgres-bridge
     container_name: mqtt-postgres-bridge
     depends_on:
       - mosquitto
@@ -113,7 +135,7 @@ services:
     restart: unless-stopped
 
   mqtt-telegram-bridge:
-    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge
     container_name: mqtt-telegram-bridge
     depends_on:
       - mosquitto
@@ -133,8 +155,17 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
+  proxy:
+    image: ${CONTAINER_REGISTRY}/iotcloud_proxy
+    container_name: proxy
+    command: ${PROXY_HOST}
+    logging: *default-logging
+    restart: unless-stopped
+    volumes:
+      - ${PROXY_KEY}:/home/ssh/key:ro
+
   weather-poller:
-    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller:latest
+    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller
     container_name: weather-poller
     depends_on:
       - influxdb
