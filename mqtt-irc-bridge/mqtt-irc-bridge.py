@@ -34,7 +34,7 @@ class Transfer():
         # remaining variables are controlled internally
         self._fileh = None
         self._md5 = hashlib.md5()
-        self.filename = pathlib.Path('/data') / pathlib.Path(filename).name
+        self.filename = pathlib.Path('/data/inprogress') / pathlib.Path(filename).name
         self.received_bytes = 0
         if self.filename.exists():
             self.received_bytes = self.disksize
@@ -65,8 +65,8 @@ class Transfer():
         if self.connection and self.connection.connected:
             self.connection.disconnect()
 
-        if 'verified' not in str(self.filename.resolve()):
-            destdir = pathlib.Path('verified') if self.verified else pathlib.Path('unverified')
+        if 'progress' in str(self.filename.resolve()):
+            destdir = pathlib.Path('../') if self.verified else pathlib.Path('../unverified')
             self.filename = self.filename.rename(self.filename.parent / destdir / self.filename.name)
 
     @property
