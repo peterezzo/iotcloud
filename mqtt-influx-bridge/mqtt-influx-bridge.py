@@ -6,7 +6,6 @@ Author: Pete Ezzo <peter.ezzo@gmail.com>
 """
 
 import datetime
-import json
 import os
 import time
 
@@ -22,8 +21,16 @@ class Bridge():
         """
         Send a message to InfluxDB when reading arrives in broker (MQTT Callback)
         """
-        location = msg.topic.split('/', maxsplit=1)[1]
-        metrics = json.loads(msg.payload)
+        _, location, metric = msg.topic.split('/')
+        value = msg.payload
+
+        if metric == 'Temperature_C':
+            metric = 'temperature'
+        elif metric == 'Humidity_Pct':
+            metric = 'humidity'
+
+        if metric in ['temperature', 'dewpoint', 'windSpeed', 'humidity']:
+            value = float(value)
 
         data_payload = {
             'measurement': 'environmental',
@@ -32,8 +39,7 @@ class Bridge():
             },
             'time': str(datetime.datetime.utcnow().replace(microsecond=0)),
             'fields': {
-                'temperature': float(metrics['temperature']),
-                'humidity': float(metrics['humidity'])
+                metric: value,
             }
         }
         print(data_payload, flush=True)
@@ -41,26 +47,28 @@ class Bridge():
 
     def pull_temperatures(self):
         print('Temperatures cmd received', flush=True)
-        query = '''from(bucket: "Environment")
-  |> range(start: -3h)
-  |> last()
-  |> filter(fn: (r) =>
-    r._measurement == "environmental" and
-    r._field == "temperature"
-  )
-  |> toFloat()
-  |> map(fn: (r) => ({r with _value: r._value * 1.8 + 32.0}))'''
+        query = '\n'.join(['from(bucket: "Environment")',
+                           '|> range(start: -3h)',
+                           '|> last()',
+                           '|> filter(fn: (r) =>',
+                           '  r._measurement == "environmental" and',
+                           '  r._field == "temperature"',
+                           ')',
+                           '|> toFloat()',
+                           '|> map(fn: (r) => ({r with _value: r._value * 1.8 + 32.0}))'
+                           ])
         self._pull_metric(query, ' °F')
 
     def pull_humidity(self):
-        print('Temperatures cmd received', flush=True)
-        query = '''from(bucket: "Environment")
-  |> range(start: -3h)
-  |> last()
-  |> filter(fn: (r) =>
-    r._measurement == "environmental" and
-    r._field == "humidity"
-  )'''
+        print('Humidities cmd received', flush=True)
+        query = '\n'.join(['from(bucket: "Environment")',
+                           '|> range(start: -3h)',
+                           '|> last()',
+                           '|> filter(fn: (r) =>',
+                           '  r._measurement == "environmental" and',
+                           '  r._field == "humidity"',
+                           ')'
+                           ])
         self._pull_metric(query, '%')
 
     def _pull_metric(self, query, tail=''):
