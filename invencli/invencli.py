@@ -46,7 +46,7 @@ class InvenCLI():
             payload = json.dumps({'type': 'privmsg', 'target': target, 'msg': f'{self.preamble} {name}'})
             cmds.append(('Commands/IRC', payload, 2, False))
 
-        print('\n'.join(cmds))
+        print('\n'.join([c[1] for c in cmds]))
         if not dryrun:
             multiple(cmds, hostname=self.mqtt_broker)
 
