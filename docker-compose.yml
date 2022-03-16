@@ -154,6 +154,18 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
+  nwsapi-influx-bridge:
+    image: ${CONTAINER_REGISTRY}/iotcloud_nwsapi-influx-bridge
+    container_name: nwsapi-influx-bridge
+    depends_on:
+      - influxdb
+    environment:
+    - OBSERVATION_STATIONS
+    logging: *default-logging
+    restart: unless-stopped
+    volumes:
+      - influxdb_config:/etc/influxdb2:ro
+
   postgres:
     image: docker.io/library/postgres:14-alpine
     container_name: postgres
@@ -171,15 +183,3 @@ services:
     restart: unless-stopped
     volumes:
       - ${PROXY_KEY}:/home/ssh/key:ro
-
-  weather-poller:
-    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller
-    container_name: weather-poller
-    depends_on:
-      - influxdb
-    environment:
-    - OBSERVATION_STATIONS
-    logging: *default-logging
-    restart: unless-stopped
-    volumes:
-      - influxdb_config:/etc/influxdb2:ro

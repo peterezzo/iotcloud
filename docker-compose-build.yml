@@ -36,12 +36,12 @@ services:
       context: mqtt-telegram-bridge
     image: ${CONTAINER_REGISTRY}/iotcloud_mqtt-telegram-bridge
 
+  nwsapi-influx-bridge:
+    build:
+      context: nwsapi-influx-bridge
+    image: ${CONTAINER_REGISTRY}/iotcloud_nwsapi-influx-bridge
+
   proxy:
     build:
       context: proxy
     image: ${CONTAINER_REGISTRY}/iotcloud_proxy
-
-  weather-poller:
-    build:
-      context: weather-poller
-    image: ${CONTAINER_REGISTRY}/iotcloud_weather-poller
