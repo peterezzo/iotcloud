@@ -28,6 +28,14 @@ services:
     volumes:
       - letsencrypt_data:/etc/letsencrypt
 
+  chrony:
+    image: ${CONTAINER_REGISTRY}/iotcloud_chrony
+    container_name: chrony
+    logging: *default-logging
+    ports:
+      - "123:123/udp"
+    restart: unless-stopped
+
   coredns:
     image: docker.io/coredns/coredns
     container_name: coredns

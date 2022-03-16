@@ -6,6 +6,11 @@ services:
       context: certbot
     image: ${CONTAINER_REGISTRY}/iotcloud_certbot
 
+  chrony:
+    build:
+      context: chrony
+    image: ${CONTAINER_REGISTRY}/iotcloud_chrony
+
   invencli:
     build:
       context: invencli
