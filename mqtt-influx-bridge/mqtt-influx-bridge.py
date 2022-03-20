@@ -15,7 +15,8 @@ from mqtt import MQTT  # type: ignore
 
 class Bridge():
     def __init__(self) -> None:
-        self.main()
+        self.lastseen = {}
+        self.state = {}
 
     def relay_metric(self, mosq, obj, msg):
         """
@@ -44,6 +45,7 @@ class Bridge():
         }
         print(data_payload, flush=True)
         self.db.write(data_payload)
+        self.lastseen[location] = time.time()
 
     def pull_temperatures(self):
         print('Temperatures cmd received', flush=True)
@@ -86,7 +88,18 @@ class Bridge():
         else:
             print('Unknown cmd received', cmd, flush=True)
 
-    def main(self) -> None:
+    def detect_state(self):
+        now = time.time()
+        for sensor, lastseen in self.lastseen.items():
+            online = self.state.get(sensor, False)
+            if online and now - lastseen > 5 * 60:
+                self.mqtt.pub('Notifications/sensors', f'{sensor} is offline', verbose=True)
+                self.state[sensor] = False
+            elif not online and now - lastseen < 5 * 60:
+                self.mqtt.pub('Notifications/sensors', f'{sensor} is online', verbose=True)
+                self.state[sensor] = True
+
+    def start(self) -> None:
         mqtt_broker = os.getenv('MQTT_BROKER')
 
         self.db = InfluxDB('Environment')
@@ -100,8 +113,10 @@ class Bridge():
         self.mqtt.sub(self.cmd_dispatcher, 'Commands/Influx', 0)
 
         while True:
+            self.detect_state()
             time.sleep(1)
 
 
 if __name__ == '__main__':
-    Bridge()
+    bridge = Bridge()
+    bridge.start()
