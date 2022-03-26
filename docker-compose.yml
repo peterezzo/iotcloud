@@ -18,6 +18,16 @@ networks:
 
 services:
 
+  autoheal:
+    image: docker.io/willfarrell/autoheal
+    container_name: autoheal
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+    logging: *default-logging
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
   certbot:
     image: ${CONTAINER_REGISTRY}/iotcloud_certbot
     container_name: certbot

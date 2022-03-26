@@ -6,4 +6,4 @@ USER 1000:1000
 
 CMD [ "python", "./mqtt-influx-bridge.py" ]
 
-HEALTHCHECK CMD [ "test", "-n", "$(find /dev/shm/healthcheck -mmin -5)" ]
+HEALTHCHECK CMD test -n "$(find /dev/shm/healthcheck -mmin -5 2>/dev/null)"
