@@ -4,7 +4,6 @@ Postgres-MQTT Bridge and Notifier
 """
 
 import collections
-import json
 import os
 import random
 import time
@@ -25,8 +24,8 @@ class Bridge():
         """
         Add object to inventory when it arrives in broker (MQTT Callback)
         """
-        payload = json.loads(msg.payload)
-        self.db.add_record(**payload)
+        object = [s.decode().strip() for s in msg.payload.split(b'\x00')]
+        self.db.add_record(*object)
 
     def queries(self, mosq, obj, msg):
         if b'search' in msg.payload[:6]:
@@ -53,8 +52,7 @@ class Bridge():
             objmap[name].add(source)
         for name, sources in {k: list(objmap[k]) for k in sorted(objmap, key=lambda k: len(objmap[k]))}.items():
             target = sources[random.randint(0, len(sources) - 1)]
-            payload = json.dumps({'type': 'privmsg', 'target': target, 'msg': f'{self.preamble} {name}'})
-            cmds.append(('Commands/IRC', payload, 2, False))
+            cmds.append((f'Commands/IRC/privmsg/{target}', f'{self.preamble} {name}', 2, False))
         self.mqtt.multipub(cmds)
 
     def start(self) -> None:

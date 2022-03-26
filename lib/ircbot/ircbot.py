@@ -149,7 +149,7 @@ class IRCBot():
         if self.nickpass:
             self.sub(self.nickserv_auth, 'privnotice', -10)
         else:
-            self.sub(self.join_channels, 'connect', -10)
+            self.sub(self.join_channels, 'endofmotd', -10)
 
     def start(self) -> None:
         print('Connecting to IRC', flush=True)

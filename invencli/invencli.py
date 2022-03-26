@@ -5,7 +5,6 @@ Author: Pete Ezzo <peter.ezzo@gmail.com>
 """
 
 import collections
-import json
 import os
 import random
 import sys
@@ -43,8 +42,8 @@ class InvenCLI():
             objmap[name].add(source)
         for name, sources in {k: list(objmap[k]) for k in sorted(objmap, key=lambda k: len(objmap[k]))}.items():
             target = sources[random.randint(0, len(sources) - 1)]
-            payload = json.dumps({'type': 'privmsg', 'target': target, 'msg': f'{self.preamble} {name}'})
-            cmds.append(('Commands/IRC', payload, 2, False))
+            payload = f'{self.preamble} {name}'
+            cmds.append((f'Commands/IRC/privmsg/{target}', payload, 2, False))
 
         print('\n'.join([c[1] for c in cmds]))
         if not dryrun:

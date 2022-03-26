@@ -16,7 +16,6 @@ from mqtt import MQTT, Client, MQTTMessage  # type: ignore
 
 
 def log(*args, **kwargs):
-    # msg = json.dumps(args, default=str)
     kwargs['flush'] = True
     print(*args, **kwargs)
 
@@ -139,7 +138,8 @@ class Bot():
             ('ctcp', 'Process CTCP Messages', self.handle_ctcp),
             ('dccmsg', 'Dispatch DCC messages to appropriate object', self.handle_dcc_msg),
             ('dcc_disconnect', 'Close DCC chat states', self.handle_dcc_disconnect),
-            ('ping', 'Ping Debug', self.debug_print),
+            ('error', 'Errors?', self.debug_print),
+            ('bannedfromchan', 'Record ban messages for later feature work', self.debug_print),
             ('privmsg', 'Private Message Debug', self.debug_print),
             ('privnotice', 'Record interesting values from private notices', self.handle_watchlist),
             ('pubmsg', 'Record interesting public messages from watchlisted channels', self.handle_watchlist),
@@ -147,10 +147,11 @@ class Bot():
         ]
         for eventtype, _, callback in self.callbacks:
             self.irc.sub(callback, eventtype)
+        # self.irc.reactor.add_global_handler("all_events", self.debug_print, -5)
 
     def start(self) -> None:
         self.mqtt.listen()
-        self.mqtt.sub(self.mqtt_bridge, 'Commands/IRC')
+        self.mqtt.sub(self.mqtt_bridge, 'Commands/IRC/#')
 
         self.irc.start()
 
@@ -159,15 +160,12 @@ class Bot():
 
     def mqtt_bridge(self, client: Client, userdata: Any, msg: MQTTMessage) -> None:
         """MQTT Callback"""
-        try:
-            payload = json.loads(msg.payload)
-        except json.JSONDecodeError:
-            payload = {'type': 'broken'}
-        log('MQTT', payload)
-        if payload.get('type') == 'privmsg':
-            self.irc.privmsg(payload['target'], payload['msg'])
-            self.chatlist.add(payload['target'])
-        elif payload.get('type') == 'status':
+        operation, target = (msg.topic.split('/') + [0, 0])[2:4]
+        payload = msg.payload.decode()
+        if operation == 'privmsg':
+            self.irc.privmsg(target, payload)
+            self.chatlist.add(target)
+        elif operation == 0 and payload == 'status':
             reply = self.transfer_status()
             self.mqtt.pub('Notifications/cmd-reply', reply)
         else:
@@ -187,8 +185,8 @@ class Bot():
         if event.target in self.watchlist:
             extract = re.match(r'.{4,16} +\d+x \[([^\]]+)\] (.*)', event.arguments[0])
             if extract:
-                src, meta, name = event.source.nick, extract.group(1), extract.group(2)
-                self.mqtt.pub('IRC/watchlist', json.dumps({'src': src, 'meta': meta, 'name': name}))
+                msg = b'\x00'.join([s.encode() for s in (event.source.nick, extract.group(1), extract.group(2))])
+                self.mqtt.pub('IRC/watchlist', msg)
         elif event.target == connection.nickname:
             extract = re.match(r'.{21,35}\"([^\"]+)\".{3,15}\w{3}:([^\]]+)', event.arguments[0])
             if extract:

@@ -101,7 +101,7 @@ class Bridge():
 
     def status(self, update: Update, context: CallbackContext) -> None:
         """Check object status on the network. (Telegram Callback)"""
-        self.mqtt.pub('Commands/IRC', '{"type": "status"}')
+        self.mqtt.pub('Commands/IRC', 'status')
 
     def who_am_i(self, update: Update, context: CallbackContext):
         """Imported and Unverified. (Telegram Callback)"""
