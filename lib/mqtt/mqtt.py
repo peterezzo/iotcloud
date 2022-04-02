@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterable
 from paho.mqtt.client import Client, MQTTMessage  # type: ignore
 
 
-HEALTHCHECK = pathlib.Path('/dev/shm/healthcheck')
+HEALTHCHECK = pathlib.Path('/dev/shm/mqtt_healthcheck')
 
 
 def healthcheck(fn: Callable) -> Callable:
@@ -91,3 +91,6 @@ class MQTT():
         else:
             print('Starting nonblocking MQTT thread', flush=True)
             self.client.loop_start()
+
+    def stop(self) -> None:
+        self.client.disconnect()

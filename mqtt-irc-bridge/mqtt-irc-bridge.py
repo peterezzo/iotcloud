@@ -10,9 +10,21 @@ import os
 import pathlib
 import re
 import struct
-from typing import Any, Tuple
+from functools import wraps
+from typing import Any, Callable, Tuple
 from ircbot import IRCBot, ServerConnection, Event, DCCConnectionError  # type: ignore
 from mqtt import MQTT, Client, MQTTMessage  # type: ignore
+
+
+HEALTHCHECK = pathlib.Path('/dev/shm/irc_healthcheck')
+
+
+def healthcheck(fn: Callable) -> Callable:
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        HEALTHCHECK.touch()
+        fn(*args, **kwargs)
+    return wrapper
 
 
 def log(*args, **kwargs):
@@ -138,7 +150,7 @@ class Bot():
             ('ctcp', 'Process CTCP Messages', self.handle_ctcp),
             ('dccmsg', 'Dispatch DCC messages to appropriate object', self.handle_dcc_msg),
             ('dcc_disconnect', 'Close DCC chat states', self.handle_dcc_disconnect),
-            ('error', 'Errors?', self.debug_print),
+            ('disconnect', 'Server disconnect', self.stop),
             ('bannedfromchan', 'Record ban messages for later feature work', self.debug_print),
             ('privmsg', 'Private Message Debug', self.debug_print),
             ('privnotice', 'Record interesting values from private notices', self.handle_watchlist),
@@ -150,13 +162,16 @@ class Bot():
         # self.irc.reactor.add_global_handler("all_events", self.debug_print, -5)
 
     def start(self) -> None:
+        print('Bot Starting', flush=True)
         self.mqtt.listen()
         self.mqtt.sub(self.mqtt_bridge, 'Commands/IRC/#')
 
         self.irc.start()
 
     def stop(self) -> None:
+        print('Bot Stopping', flush=True)
         self.irc.stop()
+        self.mqtt.stop()
 
     def mqtt_bridge(self, client: Client, userdata: Any, msg: MQTTMessage) -> None:
         """MQTT Callback"""
@@ -180,6 +195,7 @@ class Bot():
                 active.append(f'{t.name} {t.fileopen} {t.src} {t.ip} {t.pct_complete}%')
             return '\n' + '\n'.join(active)
 
+    @healthcheck
     def handle_watchlist(self, connection: ServerConnection, event: Event) -> None:
         """IRC Callback"""
         if event.target in self.watchlist:

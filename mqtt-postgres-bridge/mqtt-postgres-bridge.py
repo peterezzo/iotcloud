@@ -39,11 +39,13 @@ class Bridge():
 
     def search(self, data):
         results = self.db.search_names(data)
-        self.mqtt.pub('Notifications/cmd-reply', '\n'.join([f'{result[0]} : {result[1]}' for result in results]))
+        msg = '\n'.join([f'{result[0]} : {result[1]}' for result in results]) if results else 'No results'
+        self.mqtt.pub('Notifications/cmd-reply', msg)
 
     def sources(self, data):
         results = self.db.search_all(data)
-        self.mqtt.pub('Notifications/cmd-reply', '\n'.join([f'{result[1]} {result[3]}' for result in results]))
+        msg = '\n'.join([f'{result[1]} {result[3]}' for result in results]) if results else 'No results'
+        self.mqtt.pub('Notifications/cmd-reply', msg)
 
     def get(self, data):
         cmds = []
